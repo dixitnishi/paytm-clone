@@ -12,6 +12,7 @@ app.use("/api/v1",rootRouter);
 
 
 app.listen(8080)
+console.log("Application started successfully")
 
 
 

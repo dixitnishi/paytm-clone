@@ -1,7 +1,7 @@
 const express = require("express");
 const { User, Account } = require("../db");
 const zod = require("zod");
-const { jwt } = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config");
 const { authMiddleware } = require("../middleware");
 const router = express.Router();
@@ -26,7 +26,7 @@ const updateUserBody = zod.object({
 
 
 router.post("/signup", async (req,res) => {
-    const success = signUpBody.safeParse(req);
+    const {success} = signUpBody.safeParse(req);
     if(!success){
         return res.status(411).json({
             message: "Incorrect input body"
@@ -38,6 +38,7 @@ router.post("/signup", async (req,res) => {
     })
 
     if(isExistingUser){
+        console.log(isExistingUser)
         return res.status(411).json({
             message: "Email already associated to an user"
         })
@@ -70,28 +71,27 @@ router.post("/signup", async (req,res) => {
 
 
 router.post("/signin", async (req,res)=>{
-    const isBodyValid = signInBody.safeParse(req);
-    if(!isBodyValid){
+    const { success } = signInBody.safeParse(req.body)
+    if (!success) {
         return res.status(411).json({
-            message: "Request body is invalid or does not contain the required attributes"
+            message: "Email already taken / Incorrect inputs"
         })
     }
 
     const user = await User.findOne({
         username: req.body.username,
         password: req.body.password
-    })
-    const userId = user._id;
+    });
 
-    const tokenJwt = jwt.sign({
-        userId,
-    },JWT_SECRET)
-
-    if(user){
-        return res.status(200).json({
-            message: "User logged in successfully",
-            token: tokenJwt
+    if (user) {
+        const token = jwt.sign({
+            userId: user._id
+        }, JWT_SECRET);
+  
+        res.json({
+            token: token
         })
+        return;
     }
 
     return res.status(411).json({
